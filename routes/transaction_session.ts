@@ -39,17 +39,15 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
   const txPublicKey = new PublicKey(session['public_key'])
   const txMessage = session['message']
 
-  const sigsForAddress = await connection.getSignaturesForAddress(txPublicKey)
+  const sigsForAddress = await connection.getSignaturesForAddress(txPublicKey, {}, "confirmed")
 
-  const confirmedSigsForAddress = sigsForAddress.filter(x => x.confirmationStatus != "processed")
+  const sigs = sigsForAddress.map(item => item.signature)
 
-  const sigs = confirmedSigsForAddress.map(item => item.signature)
-
-  console.log("Sigs:", sigs.join(', '))
+  //console.log("Sigs:", sigs.join(', '))
 
   if(sigs.length) {
 
-    const txs = await connection.getTransactions(sigs)
+    const txs = await connection.getTransactions(sigs, "confirmed")
 
     for(const tx of txs) {
 
