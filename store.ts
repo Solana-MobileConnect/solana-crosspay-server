@@ -1,13 +1,14 @@
-
 type SessionID = string; // UUID
 type Timestamp = number;
 
+type LoginSessionState = "init" | "set";
+
 type LoginSessionStore = {
+  
+  // init: the session has been created
+  // set: the public key was set
+  
   [index: SessionID]: {
-
-    // init: the session has been created
-    // set: the public key was set
-
     state: "init",
     created_at: Timestamp
   } |
