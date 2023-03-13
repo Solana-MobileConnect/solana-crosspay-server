@@ -33,8 +33,9 @@ type TransactionSessionStore = {
     state: "init" | "requested" | "timeout" | "confirmed" | "finalized",
     created_at: Timestamp,
 
+    transaction: string,
+
     // The data we use to look for the tx
-  
     public_key: string,
     message: string,
 

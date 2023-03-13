@@ -76,6 +76,7 @@ router.post('/transaction_session', (req: Request, res: Response) => {
 
   const session = {
     state: "init" as "init",
+    transaction: transaction,
     created_at: Date.now(),
     public_key: publicKey,
     message: messageBase64

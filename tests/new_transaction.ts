@@ -1,3 +1,5 @@
+#!ts-node
+
 import { clusterApiUrl, Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js"
 import base58 from 'bs58'
 
