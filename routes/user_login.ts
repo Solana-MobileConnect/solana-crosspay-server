@@ -92,7 +92,9 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   res.status(200).json({
     transaction: encodedTransaction,
-    message: "Logged in! (Ignore this)"
+    message: "Logged in!"
+    //message: "Logged in! (Ignore this message)"
+    //message: "Logged in! (Ignore this)"
     //message: "Ignore this transaction"
     //message: "Logged in!"
     //message: "Successfully logged in! (Ignore this transaction)"

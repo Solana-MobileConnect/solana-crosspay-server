@@ -6,7 +6,21 @@ import { v4 as uuid } from "uuid"
 const router: Router = express.Router()
 
 router.get('/login_session', (req: Request, res: Response) => {
-  res.send({})
+
+  console.log("Get login session")
+
+  if (!req.query['login_session_id']) {
+    res.status(400).send("No login session id")
+    return
+  }
+
+  const login_session_id = req.query['login_session_id'].toString()
+
+  if (!(login_session_id in login_session_store)) {
+    return res.status(400).send("Invalid session id")
+  }
+
+  res.send(login_session_store[login_session_id])
 })
 
 router.post('/login_session', (req: Request, res: Response) => {
