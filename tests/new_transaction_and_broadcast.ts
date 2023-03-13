@@ -31,10 +31,13 @@ async function main() {
 
   tx.sign(account1)
 
-  // Client: SDK serializes it
   const serializedTx = tx.serialize({requireAllSignatures: false}).toString('base64')
 
   console.log("Transaction:", serializedTx)
+
+  const serializedMessage = tx.serializeMessage().toString('base64')
+
+  console.log("Message:", serializedMessage)
 
   const result = await fetch("http://localhost:3001/transaction_session", {
     method: 'POST',
@@ -48,7 +51,9 @@ async function main() {
 
   console.log("Broadcast...")
 
-  const sig = await connection.sendTransaction(tx, [account1])
+  const sig = await connection.sendRawTransaction(tx.serialize())
+  // This may change the message; DON'T use this!
+  //const sig = await connection.sendTransaction(tx, [account1])
 
   console.log("Sig:", sig)
 }

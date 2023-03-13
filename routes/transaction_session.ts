@@ -61,9 +61,9 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
 
       const tx_message_base64 = tx_message.serialize().toString('base64')
 
-      console.log("TX by address")
-      console.log("Sig:", tx_sig)
-      console.log("Message:", tx_message_base64)
+      //console.log("TX by address")
+      //console.log("Sig:", tx_sig)
+      //console.log("Message:", tx_message_base64)
 
       if(tx_message_base64 == txMessage) {
         console.log("TARGET FOUND!")
