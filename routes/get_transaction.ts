@@ -3,6 +3,14 @@ import { transaction_session_store } from '../store'
 
 const router: Router = express.Router()
 
+router.get('/get_transaction', (req: Request, res: Response) => {
+  res.status(200).json({
+    // TODO: Parametrize
+    label: "Transaction",
+    icon: "https://solana.com/src/img/branding/solanaLogoMark.svg",
+  })
+})
+
 router.post('/get_transaction', async (req: Request, res: Response) => {
 
   console.log("Get transaction")
