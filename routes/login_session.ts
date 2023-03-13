@@ -20,7 +20,11 @@ router.get('/login_session', (req: Request, res: Response) => {
     return res.status(400).send("Invalid session id")
   }
 
-  res.send(login_session_store[login_session_id])
+  const state = login_session_store[login_session_id]
+
+  console.log(state)
+
+  res.status(200).send(state)
 })
 
 router.post('/login_session', (req: Request, res: Response) => {
