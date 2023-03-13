@@ -66,7 +66,7 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
       if(tx_message_base64 == txMessage) {
         console.log("TARGET FOUND!")
 
-        const origMeta = confirmedSigsForAddress.filter(item => item.signature == tx_sig)[0]
+        const origMeta = sigsForAddress.filter(item => item.signature == tx_sig)[0]
         console.log("Details:", origMeta)
 
         session['state'] = origMeta.confirmationStatus as ("confirmed" | "finalized")
