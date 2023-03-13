@@ -68,12 +68,11 @@ router.post('/user_login', async (req: Request, res: Response) => {
     })
   )
 
-  transaction.feePayer = publicKey
+  // If the user approves the transaction, they pay the fee
+  transaction.feePayer = account
 
   const latestBlockhash = await connection.getLatestBlockhash()
   transaction.recentBlockhash = latestBlockhash.blockhash
-
-  // Don't sign the transaction; if the user tries to send it, it will fail
 
   const serializedTransaction = transaction.serialize({
     requireAllSignatures: false

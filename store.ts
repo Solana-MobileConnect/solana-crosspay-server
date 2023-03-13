@@ -21,7 +21,6 @@ type LoginSessionStore = {
 
 export const login_session_store: LoginSessionStore = {}
 
-
 // init: the transaction has been stored
 // requested: the user requested it at least once using get_transaction
 // timeout: the tx has not been found on the blockchain after some period of time (it presumably failed)
