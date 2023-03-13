@@ -1,10 +1,14 @@
 import express, { Router, Request, Response } from 'express';
 import { login_session_store } from '../store'
+import { Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js"
+
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const FUNDED_ACCOUNT = '77Dn6Xm3MjpUyyAh318WtHFvAcLSPrwUChLbpM2Ngnm3'
 
 const router: Router = express.Router()
-
 
 router.get('/user_login', (req: Request, res: Response) => {
   res.status(200).json({
@@ -18,29 +22,29 @@ type InputData = {
   account: string,
 }
 
-router.post('/user_login', (req: Request, res: Response) => {
+router.post('/user_login', async (req: Request, res: Response) => {
+
+  console.log("User login")
 
   const { account } = req.body as InputData
 
-  console.log(req.body)
-
   if (!account) {
-    res.status(400)
+    res.status(400).send("No account")
     return
   }
 
   if (!req.query['login_session_id']) {
-    return res.status(400)
+    return res.status(400).send("No session id")
   }
 
   const login_session_id = req.query['login_session_id'].toString()
 
   if (!(login_session_id in login_session_store)) {
-    return res.status(400)
+    return res.status(400).send("Invalid session id")
   }
 
   console.log("Login session id:", login_session_id)
-  console.log("Set public key to:", account)
+  console.log("Account:", account)
 
   // Update session
 
@@ -54,72 +58,9 @@ router.post('/user_login', (req: Request, res: Response) => {
 
   console.log("New session:", new_session)
 
-})
-
-export default router
-
-
-/*
-
-type InputData = {
-  account: string,
-}
-
-type GetResponse = {
-  label: string,
-  icon: string,
-}
-
-export type PostResponse = {
-  transaction: string,
-  message: string,
-}
-
-export type PostError = {
-  error: string
-}
-
-function get(res: NextApiResponse<GetResponse>) {
-  res.status(200).json({
-    label: "My Store",
-    icon: "https://solana.com/src/img/branding/solanaLogoMark.svg",
-  })
-}
-
-
-async function post(
-  req: NextApiRequest,
-  res: NextApiResponse<PostResponse | PostError>
-) {
-
-  // Ensure valid Solana Pay request
-  
-  const { account } = req.body as InputData
-  console.log(req.body)
-  if (!account) {
-    res.status(400).json({ error: "No account provided" })
-    return
-  }
-
-  console.log("Account:", account)
-  
-  // Get login_id from query string
-  
-  if (!('login_id' in req.query)) {
-    return res.status(400)
-  }
-
-  const login_id = req.query['login_id'] as string
-  
-  // Associate account with login_id
-  
-  login_sessions[login_id] = account
-
-  saveSessionData()
-  
   // Create dummy transaction
 
-  const connection = new Connection(clusterApiUrl('devnet'))
+  const connection = new Connection(process.env.RPC_URL as string)
 
   const publicKey = new PublicKey(FUNDED_ACCOUNT)
 
@@ -136,7 +77,7 @@ async function post(
   const latestBlockhash = await connection.getLatestBlockhash()
   transaction.recentBlockhash = latestBlockhash.blockhash
 
-  // Don't sign the transaction
+  // Don't sign the transaction; if the user tries to send it, it will fail
 
   const serializedTransaction = transaction.serialize({
     requireAllSignatures: false
@@ -151,10 +92,14 @@ async function post(
 
   res.status(200).json({
     transaction: encodedTransaction,
-    message: "Logged in! (Ignore this transaction)"
+    message: "Logged in! (Ignore this)"
     //message: "Ignore this transaction"
     //message: "Logged in!"
     //message: "Successfully logged in! (Ignore this transaction)"
   })
-}
-*/
+
+  return res.status(200)
+
+})
+
+export default router

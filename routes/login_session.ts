@@ -11,16 +11,17 @@ router.get('/login_session', (req: Request, res: Response) => {
 
 router.post('/login_session', (req: Request, res: Response) => {
 
-  const login_session_id = uuid()
+  console.log("Create new login session")
 
-  console.log("Create new login session:", login_session_id)
+  const login_session_id = uuid()
+  console.log("ID:", login_session_id)
 
   login_session_store[login_session_id] = {
     state: "init",
     created_at: Date.now()
   }
 
-  console.log(login_session_store[login_session_id])
+  //console.log(login_session_store[login_session_id])
 
   res.send({login_session_id})
 })
