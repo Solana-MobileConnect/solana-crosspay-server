@@ -37,7 +37,14 @@ router.post('/get_transaction', async (req: Request, res: Response) => {
   console.log("Transaction session id:", transaction_session_id)
   console.log("Account:", account)
 
-  const encodedTransaction = transaction_session_store[transaction_session_id]['transaction']
+  const txState = transaction_session_store[transaction_session_id]
+
+  const encodedTransaction = txState['transaction']
+
+  // Switch state to 'requested'
+  if(txState['state'] == 'init') {
+    txState['state'] = 'requested'
+  }
 
   return res.status(200).json({
     transaction: encodedTransaction,

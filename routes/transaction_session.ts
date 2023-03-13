@@ -1,6 +1,6 @@
+import { clusterApiUrl, Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js"
 import express, { Router, Request, Response } from 'express'
 import { transaction_session_store } from '../store'
-import { Transaction } from "@solana/web3.js"
 
 import { v4 as uuid } from "uuid"
 
@@ -12,7 +12,7 @@ type GetResponseType = {
   signature?: string
 } 
 
-router.get('/transaction_session', (req: Request, res: Response) => {
+router.get('/transaction_session', async (req: Request, res: Response) => {
 
   console.log("Get transaction session")
 
@@ -30,6 +30,53 @@ router.get('/transaction_session', (req: Request, res: Response) => {
   const session = transaction_session_store[transaction_session_id]
 
   console.log(session)
+
+  // Get state of tx
+
+  const connection = new Connection('https://api.devnet.solana.com')
+  //const connection = new Connection('http://127.0.0.1:8899')
+
+  const txPublicKey = new PublicKey(session['public_key'])
+  const txMessage = session['message']
+
+  const sigsForAddress = await connection.getSignaturesForAddress(txPublicKey)
+
+  const confirmedSigsForAddress = sigsForAddress.filter(x => x.confirmationStatus != "processed")
+
+  const sigs = confirmedSigsForAddress.map(item => item.signature)
+
+  console.log("Sigs:", sigs.join(', '))
+
+  if(sigs.length) {
+
+    const txs = await connection.getTransactions(sigs)
+
+    for(const tx of txs) {
+
+      if (tx == null) continue
+
+      const { transaction: { message: tx_message, signatures: tx_signatures } } = tx
+
+      const tx_sig = tx_signatures[0]
+
+      const tx_message_base64 = tx_message.serialize().toString('base64')
+
+      console.log("TX by address")
+      console.log("Sig:", tx_sig)
+      console.log("Message:", tx_message_base64)
+
+      if(tx_message_base64 == txMessage) {
+        console.log("TARGET FOUND!")
+
+        const origMeta = confirmedSigsForAddress.filter(item => item.signature == tx_sig)[0]
+        console.log("Details:", origMeta)
+
+        session['state'] = origMeta.confirmationStatus as ("confirmed" | "finalized")
+        session['err'] = tx.meta?.err as (string | null)
+        session['signature'] = tx_sig
+      }
+    }
+  }
 
   if(session['state'] in ['init', 'requested', 'timeout']) {
     res.status(200).send({
