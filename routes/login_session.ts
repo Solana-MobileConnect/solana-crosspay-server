@@ -1,16 +1,14 @@
-import express, { Router, Request, Response } from 'express';
+import express, { Router, Request, Response } from 'express'
+import { login_session_store } from '../store'
 
 const router: Router = express.Router()
 
-let a = 1
-
 router.get('/login_session', (req: Request, res: Response) => {
-  res.send({counter: a})
+  res.send({})
 })
 
 router.post('/login_session', (req: Request, res: Response) => {
-  a += 1
-  res.send({counter: a})
+  res.send({counter: 1})
 })
 
 export default router
