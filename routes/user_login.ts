@@ -2,10 +2,6 @@ import express, { Router, Request, Response } from 'express';
 import { login_session_store } from '../store'
 import { Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js"
 
-import dotenv from 'dotenv'
-
-dotenv.config()
-
 const FUNDED_ACCOUNT = '77Dn6Xm3MjpUyyAh318WtHFvAcLSPrwUChLbpM2Ngnm3'
 
 const router: Router = express.Router()
@@ -60,7 +56,7 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   // Create dummy transaction
 
-  const connection = new Connection(process.env.RPC_URL as string)
+  const connection = new Connection(process.env.RPC_URL || "https://api.devnet.solana.com")
 
   const publicKey = new PublicKey(FUNDED_ACCOUNT)
 
