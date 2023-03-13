@@ -64,7 +64,7 @@ router.post('/user_login', async (req: Request, res: Response) => {
     SystemProgram.transfer({
       fromPubkey: publicKey,
       toPubkey: publicKey,
-      lamports: 1
+      lamports: 0
     })
   )
 
