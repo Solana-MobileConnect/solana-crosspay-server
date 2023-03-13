@@ -45,20 +45,3 @@ router.post('/login_session', (req: Request, res: Response) => {
 })
 
 export default router
-
-/*
-function get(req: NextApiRequest, res: NextApiResponse<GetResponse>) {
-
-  if (!('login_id' in req.query)) {
-    return res.status(400)
-  }
-
-  const login_id = req.query['login_id'] as string
-  const account = login_sessions[login_id]
-
-  return res.status(200).json({
-    login_id: login_id,
-    account: account
-  })
-}
-*/

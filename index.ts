@@ -7,7 +7,7 @@ import user_login from './routes/user_login'
 const cors = require('cors');
 const bodyParser = require('body-parser')
 
-//import transaction_session from './routes/transaction_session'
+import transaction_session from './routes/transaction_session'
 //import get_transaction from './routes/get_transaction'
 
 dotenv.config();
@@ -27,7 +27,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use(login_session)
 app.use(user_login)
 
-//app.use(transaction_session)
+app.use(transaction_session)
 //app.use(get_transaction)
 
 app.listen(port, () => {
