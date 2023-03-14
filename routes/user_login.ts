@@ -10,8 +10,7 @@ const router: Router = express.Router()
 
 router.get('/user_login', (req: Request, res: Response) => {
   res.status(200).json({
-    // TODO: Parametrize
-    label: "Logged in!",
+    label: "My Store" ,// TODO: Parametrize
     icon: "https://solana.com/src/img/branding/solanaLogoMark.svg",
   })
 })
@@ -89,8 +88,8 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   res.status(200).json({
     transaction: encodedTransaction,
-    message: "Ignore this transaction"
-    //message: "Logged in!"
+    //message: "Ignore this transaction"
+    message: "Logged in!"
     //message: "Logged in! (Ignore this message)"
     //message: "Logged in! (Ignore this)"
     //message: "Ignore this transaction"
