@@ -12,7 +12,7 @@ type GetResponseType = {
   signature?: string
 } 
 
-const TRANSACTION_TIMEOUT = 15000
+// const TRANSACTION_TIMEOUT = 30000
 
 router.get('/transaction_session', async (req: Request, res: Response) => {
 
@@ -34,10 +34,12 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
   console.log(session)
 
   // Timeout
+  /*
   console.log(Date.now() - session['created_at'])
   if (Date.now() - session['created_at'] >= TRANSACTION_TIMEOUT) {
     session['state'] = 'timeout'
   }
+  */
 
   if (!(session['state'] in ['timeout', 'finalized'])) {
     // Get state of tx on blockchain
