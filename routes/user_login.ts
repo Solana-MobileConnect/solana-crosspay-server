@@ -9,7 +9,7 @@ const router: Router = express.Router()
 router.get('/user_login', (req: Request, res: Response) => {
   res.status(200).json({
     // TODO: Parametrize
-    label: "User login",
+    label: "Logged in!",
     icon: "https://solana.com/src/img/branding/solanaLogoMark.svg",
   })
 })
@@ -23,6 +23,8 @@ router.post('/user_login', async (req: Request, res: Response) => {
   console.log("User login")
 
   const { account } = req.body as InputData
+
+  const accountPublicKey = new PublicKey(account)
 
   if (!account) {
     res.status(400).send("No account")
@@ -58,21 +60,23 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   const connection = new Connection(process.env.RPC_URL || "https://api.devnet.solana.com")
 
-  const publicKey = new PublicKey(FUNDED_ACCOUNT)
-
   const transaction = new Transaction().add(
     SystemProgram.transfer({
-      fromPubkey: publicKey,
-      toPubkey: publicKey,
+      fromPubkey: accountPublicKey,
+      toPubkey: accountPublicKey,
       lamports: 0
     })
   )
 
   // If the user approves the transaction, they pay the fee
-  transaction.feePayer = new PublicKey(account)
+  transaction.feePayer = accountPublicKey
+
 
   const latestBlockhash = await connection.getLatestBlockhash()
   transaction.recentBlockhash = latestBlockhash.blockhash
+
+
+  transaction.sign(publicKey)
 
   const serializedTransaction = transaction.serialize({
     requireAllSignatures: false
@@ -87,7 +91,8 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   res.status(200).json({
     transaction: encodedTransaction,
-    message: "Logged in!"
+    message: "Ignore this transaction"
+    //message: "Logged in!"
     //message: "Logged in! (Ignore this message)"
     //message: "Logged in! (Ignore this)"
     //message: "Ignore this transaction"
