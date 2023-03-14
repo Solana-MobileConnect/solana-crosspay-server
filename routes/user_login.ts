@@ -75,9 +75,6 @@ router.post('/user_login', async (req: Request, res: Response) => {
   const latestBlockhash = await connection.getLatestBlockhash()
   transaction.recentBlockhash = latestBlockhash.blockhash
 
-
-  transaction.sign(publicKey)
-
   const serializedTransaction = transaction.serialize({
     requireAllSignatures: false
   })
