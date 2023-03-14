@@ -64,12 +64,12 @@ router.post('/user_login', async (req: Request, res: Response) => {
     SystemProgram.transfer({
       fromPubkey: publicKey,
       toPubkey: publicKey,
-      lamports: 1
+      lamports: 0
     })
   )
 
   // If the user approves the transaction, they pay the fee
-  transaction.feePayer = publicKey
+  transaction.feePayer = new PublicKey(account)
 
   const latestBlockhash = await connection.getLatestBlockhash()
   transaction.recentBlockhash = latestBlockhash.blockhash
