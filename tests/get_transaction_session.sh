@@ -1,4 +1,4 @@
-TX_ID=6d1990ed-0bb6-4507-9f8c-cbc62b3f6c76
+TX_ID=beb9aed6-902d-4202-b81f-b344c17ad792
 
 curl http://localhost:3001/transaction_session?transaction_session_id=$TX_ID
 

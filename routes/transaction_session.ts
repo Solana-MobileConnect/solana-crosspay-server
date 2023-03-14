@@ -12,6 +12,8 @@ type GetResponseType = {
   signature?: string
 } 
 
+const TRANSACTION_TIMEOUT = 15000
+
 router.get('/transaction_session', async (req: Request, res: Response) => {
 
   console.log("Get transaction session")
@@ -31,47 +33,55 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
 
   console.log(session)
 
-  // Get state of tx
+  // Timeout
+  console.log(Date.now() - session['created_at'])
+  if (Date.now() - session['created_at'] >= TRANSACTION_TIMEOUT) {
+    session['state'] = 'timeout'
+  }
 
-  const connection = new Connection('https://api.devnet.solana.com')
-  //const connection = new Connection('http://127.0.0.1:8899')
+  if (!(session['state'] in ['timeout', 'finalized'])) {
+    // Get state of tx on blockchain
 
-  const txPublicKey = new PublicKey(session['public_key'])
-  const txMessage = session['message']
+    const connection = new Connection('https://api.devnet.solana.com')
+    //const connection = new Connection('http://127.0.0.1:8899')
 
-  const sigsForAddress = await connection.getSignaturesForAddress(txPublicKey, {}, "confirmed")
+    const txPublicKey = new PublicKey(session['public_key'])
+    const txMessage = session['message']
 
-  const sigs = sigsForAddress.map(item => item.signature)
+    const sigsForAddress = await connection.getSignaturesForAddress(txPublicKey, {}, "confirmed")
 
-  //console.log("Sigs:", sigs.join(', '))
+    const sigs = sigsForAddress.map(item => item.signature)
 
-  if(sigs.length) {
+    //console.log("Sigs:", sigs.join(', '))
 
-    const txs = await connection.getTransactions(sigs, "confirmed")
+    if(sigs.length) {
 
-    for(const tx of txs) {
+      const txs = await connection.getTransactions(sigs, "confirmed")
 
-      if (tx == null) continue
+      for(const tx of txs) {
 
-      const { transaction: { message: tx_message, signatures: tx_signatures } } = tx
+        if (tx == null) continue
 
-      const tx_sig = tx_signatures[0]
+        const { transaction: { message: tx_message, signatures: tx_signatures } } = tx
 
-      const tx_message_base64 = tx_message.serialize().toString('base64')
+        const tx_sig = tx_signatures[0]
 
-      //console.log("TX by address")
-      //console.log("Sig:", tx_sig)
-      //console.log("Message:", tx_message_base64)
+        const tx_message_base64 = tx_message.serialize().toString('base64')
 
-      if(tx_message_base64 == txMessage) {
-        console.log("TARGET FOUND!")
+        //console.log("TX by address")
+        //console.log("Sig:", tx_sig)
+        //console.log("Message:", tx_message_base64)
 
-        const origMeta = sigsForAddress.filter(item => item.signature == tx_sig)[0]
-        console.log("Details:", origMeta)
+        if(tx_message_base64 == txMessage) {
+          console.log("TARGET FOUND!")
 
-        session['state'] = origMeta.confirmationStatus as ("confirmed" | "finalized")
-        session['err'] = tx.meta?.err as (string | null)
-        session['signature'] = tx_sig
+          const origMeta = sigsForAddress.filter(item => item.signature == tx_sig)[0]
+          console.log("Details:", origMeta)
+
+          session['state'] = origMeta.confirmationStatus as ("confirmed" | "finalized")
+          session['err'] = tx.meta?.err as (string | null)
+          session['signature'] = tx_sig
+        }
       }
     }
   }

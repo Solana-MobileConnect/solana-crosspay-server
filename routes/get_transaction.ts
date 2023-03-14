@@ -39,6 +39,10 @@ router.post('/get_transaction', async (req: Request, res: Response) => {
 
   const txState = transaction_session_store[transaction_session_id]
 
+  if(txState['state'] == 'timeout') {
+    return res.status(400).send("Transaction timed out")
+  }
+
   const encodedTransaction = txState['transaction']
 
   // Switch state to 'requested'
