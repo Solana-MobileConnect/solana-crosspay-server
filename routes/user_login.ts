@@ -2,7 +2,10 @@ import express, { Router, Request, Response } from 'express';
 import { login_session_store } from '../store'
 import { Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js"
 
+import base58 from 'bs58'
+
 const FUNDED_ACCOUNT = '77Dn6Xm3MjpUyyAh318WtHFvAcLSPrwUChLbpM2Ngnm3'
+const FUNDED_ACCOUNT_SECRET = '4YThHKu5jCGA518xAdQiEZCrhrFhBQdk5Z7Tvhb6nRg8ZHLmbbDm54mRm2rh3wJzquXQndNuheHeJVTkFpanXgiq'
 
 const router: Router = express.Router()
 
@@ -67,13 +70,25 @@ router.post('/user_login', async (req: Request, res: Response) => {
       lamports: 0
     })
   )
+  
+  const fundedAccountKeypair = Keypair.fromSecretKey(base58.decode(FUNDED_ACCOUNT_SECRET))
+  const fundedAccountPublicKey = fundedAccountKeypair.publicKey
+
+  transaction.add(
+    SystemProgram.transfer({
+      fromPubkey: fundedAccountPublicKey,
+      toPubkey: fundedAccountPublicKey,
+      lamports: 0
+    })
+  )  
 
   // If the user approves the transaction, they pay the fee
   transaction.feePayer = accountPublicKey
 
-
   const latestBlockhash = await connection.getLatestBlockhash()
   transaction.recentBlockhash = latestBlockhash.blockhash
+
+  transaction.sign(fundedAccountKeypair)
 
   const serializedTransaction = transaction.serialize({
     requireAllSignatures: false

@@ -44,7 +44,7 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
   if (!(session['state'] in ['timeout', 'finalized'])) {
     // Get state of tx on blockchain
 
-    const connection = new Connection('https://api.devnet.solana.com')
+    const connection = new Connection(process.env.RPC_URL || "https://api.devnet.solana.com")
     //const connection = new Connection('http://127.0.0.1:8899')
 
     const txPublicKey = new PublicKey(session['public_key'])
