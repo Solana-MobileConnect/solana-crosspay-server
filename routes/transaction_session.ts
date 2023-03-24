@@ -107,7 +107,7 @@ router.post('/transaction_session', (req: Request, res: Response) => {
 
   const transaction = req.body.transaction
 
-  //console.log(transaction)
+  console.log(transaction)
 
   if (!transaction) {
     res.status(400).send("No transaction")
