@@ -34,10 +34,7 @@ type TransactionSessionStore = {
     created_at: Timestamp,
 
     transaction: string,
-
-    // The data we use to look for the tx
-    public_key: string,
-    message: string,
+    reference_key: string,
 
     // Available once the tx is on the blockchain
 

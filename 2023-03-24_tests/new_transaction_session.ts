@@ -3,6 +3,8 @@
 import { clusterApiUrl, Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js"
 import base58 from 'bs58'
 
+const util = require('util')
+
 const account1 = Keypair.fromSecretKey(base58.decode('4cpiUyniYK2JLDXRbTqrQgqHwLALYyEvzQKpB3tVSnvXR7cUrB3MRZ6m5Evfmnqqv62VPVEVRpk1ubToWF2bqeM8'))
 const account2 = Keypair.fromSecretKey(base58.decode('3fL6jFNavnKcaNExv2ECXxKr8Gf6LLfFBrxAnRiD6o9PNepkGGyhAS4o7FMifDi7yRDynY9DWe2DxGRC6VrtKbMK'))
 
@@ -28,7 +30,8 @@ async function main() {
   // Client: SDK serializes it
   const serializedTx = tx.serialize({requireAllSignatures: false}).toString('base64')
 
-  console.log("Transaction:", serializedTx)
+  console.log("Transaction:", util.inspect((tx as any).toJSON(),{depth:null}))
+  //console.log("Transaction:", serializedTx)
 
   const result = await fetch("http://localhost:3001/transaction_session", {
     method: 'POST',

@@ -47,6 +47,7 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
     const connection = new Connection(process.env.RPC_URL || "https://api.devnet.solana.com")
     //const connection = new Connection('http://127.0.0.1:8899')
 
+    /*
     const txPublicKey = new PublicKey(session['public_key'])
     const txMessage = session['message']
 
@@ -86,6 +87,7 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
         }
       }
     }
+    */
   }
 
   if(session['state'] in ['init', 'requested', 'timeout']) {
@@ -114,29 +116,46 @@ router.post('/transaction_session', (req: Request, res: Response) => {
     return
   }
 
-  const recoveredTx = Transaction.from(Buffer.from(transaction, 'base64'))
+  let recoveredTx;
 
-  if (!recoveredTx.signatures.length) {
-    res.status(400).send("Transaction must have at least one public key")
+  try {
+    recoveredTx = Transaction.from(Buffer.from(transaction, 'base64'))
+  } catch(error: any) {
+    res.status(400).send("Invalid transaction")
     return
   }
+
+  // Try to serialize it
+  // This will run `compile`, which will ensure that the tx is valid:
+  // Ensure that there's a feePayer set (so, that it has at least one signer)
+  // Verify the existing signatures
+
+  // TODO: further check that the only signer without signature is account
+
+  let serializedTx;
+  try {
+    serializedTx = recoveredTx.serialize({requireAllSignatures: false})
+  } catch(error: any) {
+    res.status(400).send("Invalid transaction")
+    return
+  }
+
+  // This is ensured to have at least one signature
+  
+  const recoveredTx2 = Transaction.from(serializedTx)
 
   const transaction_session_id = uuid()
   console.log("ID:", transaction_session_id)
 
-  const publicKey = recoveredTx.signatures[0].publicKey.toBase58()
+  const referenceKey = recoveredTx2.signatures[0].publicKey.toBase58()
 
-  const messageBase64 = recoveredTx.serializeMessage().toString('base64')
-
-  console.log("Public Key:", publicKey)
-  console.log("Message:", messageBase64)
+  console.log("Reference Key:", referenceKey)
 
   const session = {
     state: "init" as "init",
-    transaction: transaction,
+    transaction: serializedTx.toString('base64'),
     created_at: Date.now(),
-    public_key: publicKey,
-    message: messageBase64
+    reference_key: referenceKey,
   }
 
   console.log(session)
