@@ -1,8 +1,10 @@
-import { clusterApiUrl, Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js"
+import { clusterApiUrl, Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction, Message } from "@solana/web3.js"
 import express, { Router, Request, Response } from 'express'
 import { transaction_session_store } from '../store'
 
 import { v4 as uuid } from "uuid"
+
+const util = require('util')
 
 const router: Router = express.Router()
 
@@ -13,6 +15,32 @@ type GetResponseType = {
 } 
 
 // const TRANSACTION_TIMEOUT = 30000
+
+function checkMessageEquality(message1: Message, message2: Message) {
+  
+  const checkHeader = message1.header.numRequiredSignatures === message2.header.numRequiredSignatures &&
+    message1.header.numReadonlySignedAccounts === message2.header.numReadonlySignedAccounts &&
+    message1.header.numReadonlyUnsignedAccounts === message2.header.numReadonlyUnsignedAccounts
+
+  if (!checkHeader) return false
+
+  const checkAccountKeys = message1.accountKeys.every((key, i) => key.equals(message2.accountKeys[i]))
+
+  if (!checkAccountKeys) return false
+  
+  // ignore recentBlockhash (this may have been changed by the wallet)
+  
+  const checkInstructions =  message1.instructions.every((instruction, i) => {
+      const instruction2 = message2.instructions[i]
+      return instruction2.programIdIndex == instruction.programIdIndex &&
+        instruction2.accounts.every((account, i) => account == instruction.accounts[i]) &&
+        instruction2.data === instruction.data
+    }) 
+    
+  if (!checkInstructions) return false
+
+  return true
+}
 
 router.get('/transaction_session', async (req: Request, res: Response) => {
 
@@ -47,47 +75,47 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
     const connection = new Connection(process.env.RPC_URL || "https://api.devnet.solana.com")
     //const connection = new Connection('http://127.0.0.1:8899')
 
-    /*
-    const txPublicKey = new PublicKey(session['public_key'])
-    const txMessage = session['message']
+    const referenceKey = new PublicKey(session['reference_key'])
 
-    const sigsForAddress = await connection.getSignaturesForAddress(txPublicKey, {}, "confirmed")
+    const signatureInfo = await connection.getSignaturesForAddress(referenceKey, {}, "confirmed")
 
-    const sigs = sigsForAddress.map(item => item.signature)
+    const signatures = signatureInfo.map(item => item.signature)
 
-    //console.log("Sigs:", sigs.join(', '))
+    //console.log("Signatures:", signatures.join(', '))
+    
+    const originalTx = Transaction.from(Buffer.from(session['transaction'], 'base64'))
 
-    if(sigs.length) {
+    if(signatures.length) {
 
-      const txs = await connection.getTransactions(sigs, "confirmed")
+      const txs = await connection.getTransactions(signatures, "confirmed")
 
-      for(const tx of txs) {
+      for(const [i,tx] of txs.entries()) {
 
         if (tx == null) continue
+        
+        const { transaction: { message: tx_message, signatures: [tx_sig] } } = tx
+        
+        console.log("Current tx:", tx_sig)
+        
+        // Since the tx is on-chain, we can be sure that the signatures are correct
+        // So, we can just compare the messages
 
-        const { transaction: { message: tx_message, signatures: tx_signatures } } = tx
-
-        const tx_sig = tx_signatures[0]
-
-        const tx_message_base64 = tx_message.serialize().toString('base64')
-
-        //console.log("TX by address")
-        //console.log("Sig:", tx_sig)
-        //console.log("Message:", tx_message_base64)
-
-        if(tx_message_base64 == txMessage) {
+        // We assume that the message is unique enough (e.g. contained a random memo)
+        if (checkMessageEquality(tx_message, originalTx.compileMessage())) {
           console.log("TARGET FOUND!")
+          
+          const txSignatureInfo = signatureInfo[i]
+          console.log(txSignatureInfo)
+      
+          console.log(util.inspect(tx,{depth:null}))
 
-          const origMeta = sigsForAddress.filter(item => item.signature == tx_sig)[0]
-          console.log("Details:", origMeta)
-
-          session['state'] = origMeta.confirmationStatus as ("confirmed" | "finalized")
+          session['state'] = txSignatureInfo.confirmationStatus as ("confirmed" | "finalized")
           session['err'] = tx.meta?.err as (string | null)
           session['signature'] = tx_sig
+          break
         }
       }
     }
-    */
   }
 
   if(session['state'] in ['init', 'requested', 'timeout']) {
@@ -116,6 +144,8 @@ router.post('/transaction_session', (req: Request, res: Response) => {
     return
   }
 
+  // Ensure the tx can be deserialized
+  
   let recoveredTx;
 
   try {
@@ -125,12 +155,12 @@ router.post('/transaction_session', (req: Request, res: Response) => {
     return
   }
 
+  // TODO: check that the only signer without signature is `account`
+
   // Try to serialize it
   // This will run `compile`, which will ensure that the tx is valid:
-  // Ensure that there's a feePayer set (so, that it has at least one signer)
-  // Verify the existing signatures
-
-  // TODO: further check that the only signer without signature is account
+  // It ensures that that there's a feePayer set (so, that it has at least one signer)
+  // It verifies its signatures
 
   let serializedTx;
   try {
@@ -140,13 +170,15 @@ router.post('/transaction_session', (req: Request, res: Response) => {
     return
   }
 
-  // This is ensured to have at least one signature
+  // Serialize it again
+  // This results in a tx with standard format (order of signers, for example)
   
   const recoveredTx2 = Transaction.from(serializedTx)
 
   const transaction_session_id = uuid()
   console.log("ID:", transaction_session_id)
 
+  // Since `compile` checked for a feePayer, this transaction is ensured to have at least one signer (which we will use as reference key)
   const referenceKey = recoveredTx2.signatures[0].publicKey.toBase58()
 
   console.log("Reference Key:", referenceKey)
