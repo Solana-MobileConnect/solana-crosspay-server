@@ -26,6 +26,7 @@ router.post('/user_login', async (req: Request, res: Response) => {
   const { account } = req.body as InputData
 
   const accountPublicKey = new PublicKey(account)
+  const fundedPublicKey = new PublicKey(FUNDED_ACCOUNT)
 
   if (!account) {
     res.status(400).send("No account")
@@ -63,13 +64,14 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   const transaction = new Transaction().add(
     SystemProgram.transfer({
-      fromPubkey: FUNDED_ACCOUNT,
-      toPubkey: FUNDED_ACCOUNT,
+      fromPubkey: fundedPublicKey,
+      toPubkey: fundedPublicKey,
       lamports: 0
     })
   )
   
   // If the user approves the transaction, they pay the fee
+  // We should not be the feePayer as this allows for the account to be drained
   transaction.feePayer = accountPublicKey
 
   const latestBlockhash = await connection.getLatestBlockhash()
@@ -82,6 +84,7 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   // Options for dummy transactions
   // no instructions: crashes Phantom
+  // invalid transaction: user gets error message (not acceptable)
   // self-transfer of account: user may mistakenly sign it and pay tx fees (we accept this), user gets a notification that they received 0 SOL (this is annoying), it's part of the user's tx history now (annoying), issue: user may not have funds (leading to "Can't simulate it" error)
   // self-transfer of randomly generated account without funds: "Can't simulate it" message on Phantom
   // Transfer from funded account to itself: works well! (we accept that the user will sign it); users without funds will be excluded, which is normal
