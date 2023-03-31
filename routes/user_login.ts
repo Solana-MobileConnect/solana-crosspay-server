@@ -4,7 +4,7 @@ import { Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transa
 
 import base58 from 'bs58'
 
-const FUNDED_ACCOUNT = '8g6wuqy2mzprgnb1ZG9GvcQQsC2vXZBAn5NtQR5bR9MV'
+//const FUNDED_ACCOUNT = '8g6wuqy2mzprgnb1ZG9GvcQQsC2vXZBAn5NtQR5bR9MV'
 
 const router: Router = express.Router()
 
@@ -26,7 +26,8 @@ router.post('/user_login', async (req: Request, res: Response) => {
   const { account } = req.body as InputData
 
   const accountPublicKey = new PublicKey(account)
-  const fundedPublicKey = new PublicKey(FUNDED_ACCOUNT)
+  const fundedKeypair = Keypair.fromSecretKey(base58.decode(process.env.FUNDED_ACCOUNT_SECRET as string))
+  const fundedPublicKey = fundedKeypair.publicKey
 
   if (!account) {
     res.status(400).send("No account")
