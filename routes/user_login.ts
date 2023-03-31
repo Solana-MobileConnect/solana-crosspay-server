@@ -72,6 +72,13 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   const connection = new Connection(process.env.RPC_URL || "https://api.devnet.solana.com")
 
+  // Options for dummy transactions
+  // no instructions: crashes Phantom
+  // invalid transaction: user gets error message (not acceptable)
+  // self-transfer of account: user may mistakenly sign it and pay tx fees (we accept this), user gets a notification that they received 0 SOL (this is annoying), it's part of the user's tx history now (annoying), issue: user may not have funds (leading to "Can't simulate it" error)
+  // self-transfer of randomly generated account without funds: "Can't simulate it" message on Phantom
+  // Transfer from funded account to itself: works well! (we accept that the user will sign it); users without funds will be excluded, which is normal
+
   const transaction = new Transaction().add(
     SystemProgram.transfer({
       fromPubkey: fundedPublicKey,
@@ -87,17 +94,12 @@ router.post('/user_login', async (req: Request, res: Response) => {
   const latestBlockhash = await connection.getLatestBlockhash()
   transaction.recentBlockhash = latestBlockhash.blockhash
 
+  transaction.sign(fundedKeypair)
+
   const serializedTransaction = transaction.serialize({
     requireAllSignatures: false
   })
   const encodedTransaction = serializedTransaction.toString('base64')
-
-  // Options for dummy transactions
-  // no instructions: crashes Phantom
-  // invalid transaction: user gets error message (not acceptable)
-  // self-transfer of account: user may mistakenly sign it and pay tx fees (we accept this), user gets a notification that they received 0 SOL (this is annoying), it's part of the user's tx history now (annoying), issue: user may not have funds (leading to "Can't simulate it" error)
-  // self-transfer of randomly generated account without funds: "Can't simulate it" message on Phantom
-  // Transfer from funded account to itself: works well! (we accept that the user will sign it); users without funds will be excluded, which is normal
 
   res.status(200).json({
     transaction: encodedTransaction,
