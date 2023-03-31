@@ -4,6 +4,9 @@ import { Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transa
 
 import base58 from 'bs58'
 
+import dotenv from 'dotenv'
+dotenv.config()
+
 //const FUNDED_ACCOUNT = '8g6wuqy2mzprgnb1ZG9GvcQQsC2vXZBAn5NtQR5bR9MV'
 
 const router: Router = express.Router()
@@ -19,6 +22,10 @@ type InputData = {
   account: string,
 }
 
+const FUNDED_ACCOUNT_SECRET = process.env.FUNDED_ACCOUNT_SECRET
+
+if(!FUNDED_ACCOUNT_SECRET) throw new Error("No funded account")
+
 router.post('/user_login', async (req: Request, res: Response) => {
 
   console.log("User login")
@@ -26,7 +33,7 @@ router.post('/user_login', async (req: Request, res: Response) => {
   const { account } = req.body as InputData
 
   const accountPublicKey = new PublicKey(account)
-  const fundedKeypair = Keypair.fromSecretKey(base58.decode(process.env.FUNDED_ACCOUNT_SECRET as string))
+  const fundedKeypair = Keypair.fromSecretKey(base58.decode(FUNDED_ACCOUNT_SECRET))
   const fundedPublicKey = fundedKeypair.publicKey
 
   if (!account) {
@@ -37,6 +44,8 @@ router.post('/user_login', async (req: Request, res: Response) => {
   if (!req.query['login_session_id']) {
     return res.status(400).send("No session id")
   }
+
+  // TODO: prevent multiple logins
 
   const login_session_id = req.query['login_session_id'].toString()
 
