@@ -7,7 +7,7 @@ import base58 from 'bs58'
 import dotenv from 'dotenv'
 dotenv.config()
 
-//const FUNDED_ACCOUNT = '8g6wuqy2mzprgnb1ZG9GvcQQsC2vXZBAn5NtQR5bR9MV'
+import { getRPCUrl } from '../utils'
 
 const router: Router = express.Router()
 
@@ -70,7 +70,7 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   // Create dummy transaction
 
-  const connection = new Connection(clusterApiUrl(new_session.cluster as Cluster))
+  const connection = new Connection(getRPCUrl(new_session.cluster))
 
   // Options for dummy transactions
   // no instructions: crashes Phantom
