@@ -1,6 +1,6 @@
 import express, { Router, Request, Response } from 'express';
 import { login_session_store } from '../store'
-import { Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js"
+import { Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction, clusterApiUrl, Cluster } from "@solana/web3.js"
 
 import base58 from 'bs58'
 
@@ -59,8 +59,8 @@ router.post('/user_login', async (req: Request, res: Response) => {
   // Update session
 
   const new_session = {
+    ...login_session_store[login_session_id],
     state: "set" as "set",
-    created_at: login_session_store[login_session_id].created_at,
     public_key: account
   }
 
@@ -70,7 +70,7 @@ router.post('/user_login', async (req: Request, res: Response) => {
 
   // Create dummy transaction
 
-  const connection = new Connection(process.env.RPC_URL || "https://api.devnet.solana.com")
+  const connection = new Connection(clusterApiUrl(new_session.cluster as Cluster))
 
   // Options for dummy transactions
   // no instructions: crashes Phantom

@@ -10,12 +10,14 @@ type LoginSessionStore = {
   
   [index: SessionID]: {
     state: "init",
-    created_at: Timestamp
+    created_at: Timestamp,
+    cluster: string
   } |
   {
     state: "set",
     created_at: Timestamp,
-    public_key: string
+    public_key: string,
+    cluster: string
   }
 }
 
@@ -39,7 +41,9 @@ type TransactionSessionStore = {
     // Available once the tx is on the blockchain
 
     err?: string | null,
-    signature?: string
+    signature?: string,
+
+    cluster: string
   }
 }
 

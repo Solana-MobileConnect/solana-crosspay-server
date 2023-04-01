@@ -1,4 +1,4 @@
-import { clusterApiUrl, Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction, Message } from "@solana/web3.js"
+import { clusterApiUrl, Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction, Message, Cluster } from "@solana/web3.js"
 import express, { Router, Request, Response } from 'express'
 import { transaction_session_store } from '../store'
 
@@ -72,7 +72,8 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
   if (!(session['state'] in ['timeout', 'finalized'])) {
     // Get state of tx on blockchain
 
-    const connection = new Connection(process.env.RPC_URL || "https://api.devnet.solana.com")
+    const connection = new Connection(clusterApiUrl(session['cluster'] as Cluster))
+    //const connection = new Connection(process.env.RPC_URL || "https://api.devnet.solana.com")
     //const connection = new Connection('http://127.0.0.1:8899')
 
     const referenceKey = new PublicKey(session['reference_key'])
@@ -144,6 +145,15 @@ router.post('/transaction_session', (req: Request, res: Response) => {
     return
   }
 
+  const cluster = req.body.cluster
+
+  console.log(cluster)
+
+  if (!cluster || (cluster !== "devnet" && cluster !== "mainnet-beta")) {
+    res.status(400).send("Invalid cluster")
+    return
+  }
+
   // Ensure the tx can be deserialized
   
   let recoveredTx;
@@ -188,6 +198,7 @@ router.post('/transaction_session', (req: Request, res: Response) => {
     transaction: serializedTx.toString('base64'),
     created_at: Date.now(),
     reference_key: referenceKey,
+    cluster: cluster
   }
 
   console.log(session)

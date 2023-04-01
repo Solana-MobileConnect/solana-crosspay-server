@@ -30,13 +30,23 @@ router.get('/login_session', (req: Request, res: Response) => {
 router.post('/login_session', (req: Request, res: Response) => {
 
   console.log("Create new login session")
+  
+  const cluster = req.body.cluster
+
+  console.log(cluster)
+
+  if (!cluster || (cluster !== "devnet" && cluster !== "mainnet-beta")) {
+    res.status(400).send("Invalid cluster")
+    return
+  }
 
   const login_session_id = uuid()
   console.log("ID:", login_session_id)
 
   login_session_store[login_session_id] = {
     state: "init",
-    created_at: Date.now()
+    created_at: Date.now(),
+    cluster: cluster
   }
 
   //console.log(login_session_store[login_session_id])
