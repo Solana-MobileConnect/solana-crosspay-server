@@ -10,6 +10,7 @@ import transaction_session from './routes/transaction_session'
 import get_transaction from './routes/get_transaction'
 
 const app: Express = express();
+
 const port = process.env.PORT || 3001;
 
 app.use(bodyParser.json())
