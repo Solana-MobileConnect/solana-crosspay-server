@@ -1,4 +1,4 @@
-import { clusterApiUrl, Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction, Message, Cluster } from "@solana/web3.js"
+import { clusterApiUrl, Connection, Keypair, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction, Message, Cluster, CompiledInstruction } from "@solana/web3.js"
 import express, { Router, Request, Response } from 'express'
 import { transaction_session_store } from '../store'
 
@@ -33,7 +33,7 @@ function checkMessageEquality(message1: Message, message2: Message) {
   // ignore recentBlockhash (this may have been changed by the wallet)
   
   const checkInstructions =  message1.instructions.every((instruction, i) => {
-      const instruction2 = message2.instructions[i]
+      const instruction2: CompiledInstruction = message2.instructions[i]
       return instruction2.programIdIndex == instruction.programIdIndex &&
         instruction2.accounts.every((account, i) => account == instruction.accounts[i]) &&
         instruction2.data === instruction.data
@@ -56,7 +56,8 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
   const transaction_session_id = req.query['transaction_session_id'].toString()
 
   if (!(transaction_session_id in transaction_session_store)) {
-    return res.status(400).send("Invalid session id")
+    res.status(400).send("Invalid session id")
+    return
   }
 
   const session = transaction_session_store[transaction_session_id]
@@ -71,52 +72,59 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
   }
   */
 
-  if (!(session['state'] in ['timeout', 'finalized'])) {
-    // Get state of tx on blockchain
+  try {
 
-    const connection = new Connection(getRPCUrl(session['cluster']))
+    if (!(session['state'] in ['timeout', 'finalized'])) {
+      // Get state of tx on blockchain
 
-    const referenceKey = new PublicKey(session['reference_key'])
+      const connection = new Connection(getRPCUrl(session['cluster']))
 
-    const signatureInfo = await connection.getSignaturesForAddress(referenceKey, {}, "confirmed")
+      const referenceKey = new PublicKey(session['reference_key'])
 
-    const signatures = signatureInfo.map(item => item.signature)
+      const signatureInfo = await connection.getSignaturesForAddress(referenceKey, {}, "confirmed")
 
-    //console.log("Signatures:", signatures.join(', '))
-    
-    const originalTx = Transaction.from(Buffer.from(session['transaction'], 'base64'))
+      const signatures = signatureInfo.map(item => item.signature)
 
-    if(signatures.length) {
-
-      const txs = await connection.getTransactions(signatures, "confirmed")
-
-      for(const [i,tx] of txs.entries()) {
-
-        if (tx == null) continue
-        
-        const { transaction: { message: tx_message, signatures: [tx_sig] } } = tx
-        
-        console.log("Current tx:", tx_sig)
-        
-        // Since the tx is on-chain, we can be sure that the signatures are correct
-        // So, we can just compare the messages
-
-        // We assume that the message is unique enough (e.g. contained a random memo)
-        if (checkMessageEquality(tx_message, originalTx.compileMessage())) {
-          console.log("TARGET FOUND!")
-          
-          const txSignatureInfo = signatureInfo[i]
-          console.log(txSignatureInfo)
+      //console.log("Signatures:", signatures.join(', '))
       
-          console.log(util.inspect(tx,{depth:null}))
+      const originalTx = Transaction.from(Buffer.from(session['transaction'], 'base64'))
 
-          session['state'] = txSignatureInfo.confirmationStatus as ("confirmed" | "finalized")
-          session['err'] = tx.meta?.err as (string | null)
-          session['signature'] = tx_sig
-          break
+      if(signatures.length) {
+
+        const txs = await connection.getTransactions(signatures, "confirmed")
+
+        for(const [i,tx] of txs.entries()) {
+
+          if (tx == null) continue
+          
+          const { transaction: { message: tx_message, signatures: [tx_sig] } } = tx
+          
+          console.log("Current tx:", tx_sig)
+          
+          // Since the tx is on-chain, we can be sure that the signatures are correct
+          // So, we can just compare the messages
+
+          // We assume that the message is unique enough (e.g. contained a random memo)
+          if (checkMessageEquality(tx_message, originalTx.compileMessage())) {
+            console.log("TARGET FOUND!")
+            
+            const txSignatureInfo = signatureInfo[i]
+            console.log(txSignatureInfo)
+        
+            console.log(util.inspect(tx,{depth:null}))
+
+            session['state'] = txSignatureInfo.confirmationStatus as ("confirmed" | "finalized")
+            session['err'] = tx.meta?.err as (string | null)
+            session['signature'] = tx_sig
+            break
+          }
         }
       }
     }
+  } catch(error: any) {
+    // Don't update the state of the transaction
+    // Pretend that nothing happened
+    console.error(error)
   }
 
   if(session['state'] in ['init', 'requested', 'timeout']) {
@@ -130,6 +138,7 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
       signature: session['signature'] as string
     } as GetResponseType)
   }
+
 })
 
 router.post('/transaction_session', (req: Request, res: Response) => {
