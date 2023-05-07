@@ -13,7 +13,7 @@ const router: Router = express.Router()
 
 router.get('/user_login', (req: Request, res: Response) => {
   res.status(200).json({
-    label: "My Store" ,// TODO: Parametrize
+    label: "MobileConnect",
     icon: "https://solana.com/src/img/branding/solanaLogoMark.svg",
   })
 })
