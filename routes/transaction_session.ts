@@ -85,12 +85,10 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
 
       const signatures = signatureInfo.map(item => item.signature)
 
-      console.log("Signatures:", signatures.join(', '))
+      //console.log("Signatures:", signatures.join(', '))
       
       // Only check at most the first two most recent signatures
       const checkedSignatures = signatures.filter(sig => !session['tested_signatures'].has(sig)).slice(0,2)
-      
-      checkedSignatures.forEach(sig => session['tested_signatures'].add(sig))
       
       if(checkedSignatures.length !== 0) {
 
@@ -125,6 +123,9 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
           }
         }
       }
+      
+      // Only add if it was successful
+      checkedSignatures.forEach(sig => session['tested_signatures'].add(sig))
     }
   } catch(error: any) {
     // Don't update the state of the transaction
