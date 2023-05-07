@@ -43,7 +43,9 @@ type TransactionSessionStore = {
     err?: string | null,
     signature?: string,
 
-    cluster: string
+    cluster: string,
+
+    tested_signatures: Set<string>
   }
 }
 

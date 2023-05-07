@@ -85,13 +85,18 @@ router.get('/transaction_session', async (req: Request, res: Response) => {
 
       const signatures = signatureInfo.map(item => item.signature)
 
-      //console.log("Signatures:", signatures.join(', '))
+      console.log("Signatures:", signatures.join(', '))
       
-      const originalTx = Transaction.from(Buffer.from(session['transaction'], 'base64'))
+      // Only check at most the first two most recent signatures
+      const checkedSignatures = signatures.filter(sig => !session['tested_signatures'].has(sig)).slice(0,2)
+      
+      checkedSignatures.forEach(sig => session['tested_signatures'].add(sig))
+      
+      if(checkedSignatures.length !== 0) {
 
-      if(signatures.length) {
+        const originalTx = Transaction.from(Buffer.from(session['transaction'], 'base64'))
 
-        const txs = await connection.getTransactions(signatures, "confirmed")
+        const txs = await connection.getTransactions(checkedSignatures, "confirmed")
 
         for(const [i,tx] of txs.entries()) {
 
@@ -207,7 +212,8 @@ router.post('/transaction_session', (req: Request, res: Response) => {
     transaction: serializedTx.toString('base64'),
     created_at: Date.now(),
     reference_key: referenceKey,
-    cluster: cluster
+    cluster: cluster,
+    tested_signatures: new Set<string>()
   }
 
   console.log(session)
